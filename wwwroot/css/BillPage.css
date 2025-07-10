@@ -1,0 +1,70 @@
+.bill-container {
+    border: 4px double black;
+    padding: 20px;
+    margin: 0 auto;
+    width: 800px;
+    font-family: Arial, sans-serif;
+}
+
+.bill-title {
+    text-align: center;
+    font-weight: bold;
+    font-size: 22px;
+    border-bottom: 2px solid black;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.bill-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+    .bill-info label {
+        font-weight: bold;
+        margin-right: 5px;
+    }
+
+    .bill-info input {
+        width: 120px;
+    }
+
+.customer-info {
+    margin-bottom: 10px;
+}
+
+    .customer-info label {
+        font-weight: bold;
+        margin-right: 5px;
+    }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+table, th, td {
+    border: 1px solid black;
+}
+
+th, td {
+    padding: 5px;
+    text-align: center;
+}
+
+.total-row td {
+    font-weight: bold;
+    background-color: #eee;
+}
+
+.btn-group {
+    margin-top: 20px;
+    text-align: center;
+}
+
+    .btn-group button {
+        margin: 0 10px;
+        padding: 6px 15px;
+    }

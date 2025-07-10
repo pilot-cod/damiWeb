@@ -1,0 +1,67 @@
+﻿@page
+@model damiWeb.Pages.BillPageModel
+<link rel="stylesheet" href="~/css/BillPage.css" />
+
+<div class="bill-container">
+    <div class="bill-title">HÓA ĐƠN BÁN HÀNG</div>
+
+    <form method="post" asp-page-handler="Save">
+        <div class="bill-info">
+            <div>
+                <label>Số hóa đơn:</label>
+                <input asp-for="OrderNo" readonly />
+            </div>
+            <div>
+                <label>Ngày:</label>
+                <input asp-for="OrderDate" type="date" />
+            </div>
+        </div>
+
+        <div class="customer-info">
+            <label>Khách hàng:</label>
+            <input asp-for="CustomerID" id="txtMaKH" />
+        </div>
+
+        <div class="customer-info">
+            <label>Tên KH:</label>
+            <input asp-for="CustomerName" readonly />
+            <label style="margin-left:30px;">Địa chỉ:</label>
+            <input asp-for="Address" style="width:60%;" readonly />
+        </div>
+
+        <!-- Chi tiết hàng hóa sẽ gắn sau -->
+        <div class="btn-group">
+            <button type="submit">Ghi</button>
+            <button type="reset">Bỏ qua</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        const txtMaKH = document.getElementById("txtMaKH");
+
+        txtMaKH.addEventListener("change", () => {
+            const id = txtMaKH.value.trim();
+
+            if (!id) {
+                document.querySelector('[name="CustomerName"]').value = '';
+                document.querySelector('[name="Address"]').value = '';
+                return;
+            }
+
+            fetch(`/BillPage?handler=Customer&id=${encodeURIComponent(id)}`)
+                .then(r => r.json())
+                .then(d => {
+                    if (d) {
+                        document.querySelector('[name="CustomerName"]').value = d.customerName;
+                        document.querySelector('[name="Address"]').value = d.address;
+                    } else {
+                        alert("Không tìm thấy khách hàng!");
+                        document.querySelector('[name="CustomerName"]').value = '';
+                        document.querySelector('[name="Address"]').value = '';
+                    }
+                });
+        });
+    </script>
+}
