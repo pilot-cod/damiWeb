@@ -19,6 +19,8 @@ public class BillPageModel : PageModel
     [BindProperty] public string? CustomerID { get; set; }         // gõ mã KH
     [BindProperty] public string? CustomerName { get; set; }   // tự điền
     [BindProperty] public string? Address { get; set; }        // tự điền
+    [BindProperty]
+    public List<OrderItemDto> Items { get; set; } = new();
 
     // ==== 1. Lấy OrderNo mới khi mở trang ====
     public async Task OnGetAsync()
@@ -30,6 +32,7 @@ public class BillPageModel : PageModel
 
         int next = int.TryParse(last, out int cur) ? cur + 1 : 1;
         OrderNo = next.ToString("D3");
+        Items.Add(new OrderItemDto());
     }
 
     // ==== 2. Ajax tra khách hàng ====
@@ -50,14 +53,44 @@ public class BillPageModel : PageModel
         {
             OrderDate = OrderDate,
             OrderNo = OrderNo,
-            CustomerID = CustomerID,
-            TotalAmount = 0m
+            CustomerID = CustomerID!,
+            TotalAmount = Items.Sum(x => x.Quantity * x.Price),
         };
         _db.OrderMasters.Add(master);
+        await _db.SaveChangesAsync(); // Lưu để có OrderID
+
+        int line = 1;
+        foreach (var item in Items)
+        {
+            var detail = new OrderDetail
+            {
+                OrderID = master.OrderID,
+                LineNumber = line++,
+                ItemID = item.ItemID,
+                Quantity = item.Quantity,
+                Price = item.Price,
+                Amount = item.Amount
+            };
+            _db.OrderDetails.Add(detail);
+        }
         await _db.SaveChangesAsync();
 
         TempData["msg"] = "Đã lưu hóa đơn!";
         return RedirectToPage();
     }
+
+    public class OrderItemDto
+    {
+        public string ItemID { get; set; } = string.Empty;
+        public string ItemName { get; set; } = string.Empty;
+        public string Unit { get; set; } = string.Empty;
+        public int Quantity { get; set; }
+        public decimal Price { get; set; }
+        public decimal Amount => Quantity * Price;
+    }
+
+    public List<OrderItemDto> OrderItems { get; set; } = new(); // mẫu tĩnh (hoặc lấy từ DB)
+    public int TotalQuantity => OrderItems.Sum(i => i.Quantity);
+    public decimal TotalAmount => OrderItems.Sum(i => i.Amount);
 
 }

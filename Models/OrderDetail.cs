@@ -9,7 +9,7 @@ namespace damiWeb.Models
         [Key] public int RowID { get; set; }
         public int OrderID { get; set; }
         public int LineNumber { get; set; }
-        public int ItemID { get; set; }
+        public string ItemID { get; set; } = string.Empty;
         public decimal Quantity { get; set; }
         public decimal Price { get; set; }
         public decimal Amount { get; set; }
