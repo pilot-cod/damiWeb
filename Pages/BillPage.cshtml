@@ -115,8 +115,13 @@
                 });
         });
 
-             function updateTotals() {
+        function updateTotals() {
             let totalQty = 0, totalAmount = 0;
+
+            const formatter = new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND'
+            });
 
             document.querySelectorAll('#goods-body tr').forEach(row => {
                 const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
@@ -144,8 +149,8 @@
             const row = table.insertRow();
 
             row.innerHTML = `
-                <td><input name="Items[${index}].ItemID" class="item-id" /></td>
-                <td><input name="Items[${index}].ItemName" class="item-name" readonly /></td>
+                <td><input name="Items[${index}].ItemID" class="item-id" onchange="onItemChange(this)" /></td>
+                <td><input name="Items[${index}].ItemName" class="item-name" onchange="onItemChange(this)" readonly /></td>
                 <td><input name="Items[${index}].Unit" class="item-unit" readonly /></td>
                 <td><input name="Items[${index}].Quantity" type="number" class="item-qty text-right" value="0" /></td>
                 <td><input name="Items[${index}].Price" type="number" class="item-price text-right" value="0" /></td>
