@@ -93,4 +93,31 @@ public class BillPageModel : PageModel
     public int TotalQuantity => OrderItems.Sum(i => i.Quantity);
     public decimal TotalAmount => OrderItems.Sum(i => i.Amount);
 
+    public async Task<JsonResult> OnGetItemAsync(string id)
+    {
+        var item = await _db.Items
+            .Where(i => i.ItemID == id || i.ItemName == id)
+            .Select(i => new {
+                i.ItemID,
+                i.ItemName,
+                Unit = i.InvUnitOfMeasr,
+                Price = 0 // hoặc giá mặc định nếu có
+            })
+            .FirstOrDefaultAsync();
+
+        return new JsonResult(item);
+    }
+
+    public async Task<JsonResult> OnGetAllItemsAsync()
+    {
+        var items = await _db.Items
+            .Select(i => new {
+                i.ItemID,
+                i.ItemName,
+                Unit = i.InvUnitOfMeasr,
+                Price = 0m
+            }).ToListAsync();
+
+        return new JsonResult(items);
+    }
 }

@@ -48,8 +48,14 @@
                     @for (int i = 0; i < Model.Items.Count; i++)
                     {
                         <tr>
-                            <td><input name="Items[@i].ItemID" class="item-id" value="@Model.Items[i].ItemID" /></td>
-                            <td><input name="Items[@i].ItemName" class="item-name" value="@Model.Items[i].ItemName" readonly /></td>
+                            <td>
+                                <input name="Items[@i].ItemID" class="item-id" value="@Model.Items[i].ItemID"
+                                       onchange="onItemChange(this)" />
+                            </td>
+                            <td>
+                                <input name="Items[@i].ItemName" class="item-name" value="@Model.Items[i].ItemName"
+                                       onchange="onItemChange(this)" />
+                            </td>
                             <td><input name="Items[@i].Unit" class="item-unit" value="@Model.Items[i].Unit" readonly /></td>
                             <td><input name="Items[@i].Quantity" type="number" class="item-qty text-right" value="@Model.Items[i].Quantity" /></td>
                             <td><input name="Items[@i].Price" type="number" class="item-price text-right" value="@Model.Items[i].Price" /></td>
@@ -155,5 +161,44 @@
 
         // Cập nhật tổng khi trang load
         document.addEventListener('DOMContentLoaded', updateTotals);
+
+                    let itemList = [];
+
+               document.addEventListener("DOMContentLoaded", function () {
+            fetch("/BillPage?handler=AllItems", {
+                headers: {
+                    "Cache-Control": "no-cache"
+                }
+            })
+                .then(res => {
+                    if (!res.ok) throw new Error("Fetch thất bại");
+                    return res.json();
+                })
+                .then(data => {
+                    if (!data || !Array.isArray(data)) throw new Error("Không phải mảng JSON");
+                    itemList = data;
+                    console.log("Danh sách hàng:", itemList); // Kiểm tra xem có dữ liệu không
+                })
+                .catch(err => console.error("Lỗi fetch AllItems:", err));
+        });
+
+        function onItemChange(input) {
+            const row = input.closest('tr');
+            const val = input.value.trim();
+            console.log("Người dùng nhập:", val);
+
+            const item = itemList.find(i => i.itemID === val || i.itemName === val);
+
+            if (item) {
+                console.log("Tìm thấy:", item);
+                row.querySelector('.item-id').value = item.itemID;
+                row.querySelector('.item-name').value = item.itemName;
+                row.querySelector('.item-unit').value = item.unit;
+                row.querySelector('.item-price').value = item.price;
+                updateTotals();
+            } else {
+                console.warn("Không tìm thấy mặt hàng với:", val);
+            }
+        }
     </script>
 }
