@@ -58,8 +58,8 @@
                             </td>
                             <td><input name="Items[@i].Unit" class="item-unit" value="@Model.Items[i].Unit" readonly /></td>
                             <td><input name="Items[@i].Quantity" type="number" class="item-qty text-right" value="@Model.Items[i].Quantity" /></td>
-                            <td><input name="Items[@i].Price" type="number" class="item-price text-right" value="@Model.Items[i].Price" /></td>
-                            <td><input name="Items[@i].Amount" class="item-amount text-right" value="@Model.Items[i].Amount" readonly /></td>
+                            <td><input name="Items[@i].Price" type="text" class="item-price text-right" value="@Model.Items[i].Price" /></td>
+                            <td><input name="Items[@i].Amount" class="item-amount text-right" type="text" value="@Model.Items[i].Amount.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"))" readonly /></td>
                             <td><button type="button" onclick="removeRow(this)">X</button></td>
                         </tr>
                     }
@@ -119,22 +119,26 @@
             let totalQty = 0, totalAmount = 0;
 
             const formatter = new Intl.NumberFormat('vi-VN', {
-                style: 'currency',
-                currency: 'VND'
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
             });
 
             document.querySelectorAll('#goods-body tr').forEach(row => {
                 const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
-                const price = parseFloat(row.querySelector('.item-price').value) || 0;
+
+                // 🟡 Xử lý đơn giá có định dạng 1.000.000
+                const rawPrice = row.querySelector('.item-price').value.replace(/\./g, '');
+                const price = parseFloat(rawPrice) || 0;
+
                 const amount = qty * price;
 
-                row.querySelector('.item-amount').value = amount.toLocaleString();
+                row.querySelector('.item-amount').value = formatter.format(amount);
                 totalQty += qty;
                 totalAmount += amount;
             });
 
             document.getElementById('totalQty').textContent = totalQty;
-            document.getElementById('totalAmount').textContent = totalAmount.toLocaleString();
+            document.getElementById('totalAmount').textContent = formatter.format(totalAmount);
         }
 
         document.addEventListener('input', function (e) {
@@ -154,7 +158,7 @@
                 <td><input name="Items[${index}].Unit" class="item-unit" readonly /></td>
                 <td><input name="Items[${index}].Quantity" type="number" class="item-qty text-right" value="0" /></td>
                 <td><input name="Items[${index}].Price" type="number" class="item-price text-right" value="0" /></td>
-                <td><input name="Items[${index}].Amount" class="item-amount text-right" readonly /></td>
+                <td><input name="Items[${index}].Amount" class="item-amount text-right" type="text" readonly /></td>
                 <td><button type="button" onclick="removeRow(this)">X</button></td>
             `;
         }
@@ -205,5 +209,27 @@
                 console.warn("Không tìm thấy mặt hàng với:", val);
             }
         }
+
+         document.addEventListener('blur', function (e) {
+            if (e.target.classList.contains('item-price')) {
+                const raw = e.target.value.replace(/\D/g, ''); // bỏ ký tự không phải số
+                let number = parseFloat(raw) || 0;
+
+                // Giả sử người dùng nhập đơn vị là nghìn, nên nhân 1.000 nếu < 1.000
+                if (number > 0 && number < 1000) {
+                    number *= 1000;
+                }
+
+                const formatted = new Intl.NumberFormat('vi-VN', {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                }).format(number);
+
+                e.target.value = formatted;
+
+                updateTotals();
+            }
+        }, true);
+
     </script>
 }
