@@ -6,7 +6,6 @@
     <div class="bill-title">HÓA ĐƠN BÁN HÀNG</div>
 
     <form method="post" asp-page-handler="Save">
-        <!-- Dòng 1: Số HĐ và Ngày -->
         <div class="bill-info" style="display: flex; justify-content: space-between; align-items: center;">
             <div>
                 <label>Số hóa đơn:</label>
@@ -18,7 +17,6 @@
             </div>
         </div>
 
-        <!-- Dòng 2: Mã KH và Tên KH -->
         <div class="customer-info" style="display: flex; align-items: center; margin-top: 10px;">
             <label style="margin-right: 8px;">Khách hàng:</label>
             <select asp-for="CustomerID" id="txtMaKH" style="width: 100px; margin-right: 10px;" onchange="onCustomerChange()">
@@ -32,7 +30,6 @@
             <input asp-for="CustomerName" readonly style="flex-grow: 1;" />
         </div>
 
-        <!-- Dòng 3: Địa chỉ -->
         <div class="customer-info" style="margin-top: 10px;">
             <label>Địa chỉ:</label>
             <input asp-for="Address" readonly style="width: 70%;" />
@@ -141,7 +138,6 @@
             document.querySelectorAll('#goods-body tr').forEach(row => {
                 const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
 
-                // 🟡 Xử lý đơn giá có định dạng 1.000.000
                 const rawPrice = row.querySelector('.item-price').value.replace(/\./g, '');
                 const price = parseFloat(rawPrice) || 0;
 
@@ -192,7 +188,6 @@
             updateTotals();
         }
 
-        // Cập nhật tổng khi trang load
         document.addEventListener('DOMContentLoaded', updateTotals);
 
                     let itemList = [];
@@ -210,7 +205,7 @@
                 .then(data => {
                     if (!data || !Array.isArray(data)) throw new Error("Không phải mảng JSON");
                     itemList = data;
-                    console.log("Danh sách hàng:", itemList); // Kiểm tra xem có dữ liệu không
+                    console.log("Danh sách hàng:", itemList); 
                 })
                 .catch(err => console.error("Lỗi fetch AllItems:", err));
         });
@@ -236,10 +231,9 @@
 
          document.addEventListener('blur', function (e) {
             if (e.target.classList.contains('item-price')) {
-                const raw = e.target.value.replace(/\D/g, ''); // bỏ ký tự không phải số
+                const raw = e.target.value.replace(/\D/g, '');
                 let number = parseFloat(raw) || 0;
 
-                // Giả sử người dùng nhập đơn vị là nghìn, nên nhân 1.000 nếu < 1.000
                 if (number > 0 && number < 1000) {
                     number *= 1000;
                 }
@@ -259,7 +253,6 @@
             if (e.target.classList.contains('item-amount')) {
                 const row = e.target.closest('tr');
 
-                // Lấy thành tiền sau khi người dùng nhập
                 const rawAmount = e.target.value.replace(/\D/g, '');
                 const amount = parseFloat(rawAmount) || 0;
 
@@ -268,7 +261,6 @@
                 if (qty > 0) {
                     const price = amount / qty;
 
-                    // Nếu nhỏ hơn 1000, giả định người dùng đang nhập đơn vị nghìn
                     let adjustedPrice = price;
                     if (price < 1000) adjustedPrice *= 1000;
 
@@ -282,8 +274,7 @@
                     updateTotals();
                 }
             }
-        }, true); // dùng capture phase để đảm bảo blur luôn bắt được
-
+        }, true); 
 
     </script>
 }

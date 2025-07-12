@@ -1,5 +1,4 @@
-﻿// Pages/BillPage.cshtml.cs
-using damiWeb.Data;
+﻿using damiWeb.Data;
 using damiWeb.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -12,19 +11,17 @@ public class BillPageModel : PageModel
     private readonly AppDbContext _db;
     public BillPageModel(AppDbContext db) => _db = db;
 
-    // ==== Thuộc tính bind cho Razor ====
     [BindProperty] public string OrderNo { get; set; } = string.Empty;
     [BindProperty] public DateTime OrderDate { get; set; } = DateTime.Today;
 
-    [BindProperty] public string? CustomerID { get; set; }         // chọn mã KH từ dropdown
-    [BindProperty] public string? CustomerName { get; set; }       // tự điền
-    [BindProperty] public string? Address { get; set; }            // tự điền
+    [BindProperty] public string? CustomerID { get; set; }     
+    [BindProperty] public string? CustomerName { get; set; }    
+    [BindProperty] public string? Address { get; set; }            
     [BindProperty] public List<OrderItemDto> Items { get; set; } = new();
 
-    public List<Customer> AllCustomers { get; set; } = new();      // dùng cho dropdown mã KH
-    public List<Item> AllItems { get; set; } = new();              // dùng cho dropdown mã hàng
+    public List<Customer> AllCustomers { get; set; } = new();     
+    public List<Item> AllItems { get; set; } = new();            
 
-    // ==== 1. Lấy OrderNo mới khi mở trang ====
     public async Task OnGetAsync()
     {
         var last = await _db.OrderMasters
@@ -36,12 +33,10 @@ public class BillPageModel : PageModel
         OrderNo = next.ToString("D3");
         Items.Add(new OrderItemDto());
 
-        // Load danh sách KH và Hàng hóa cho dropdown
         AllCustomers = await _db.Customers.OrderBy(c => c.CustomerID).ToListAsync();
         AllItems = await _db.Items.OrderBy(i => i.ItemID).ToListAsync();
     }
 
-    // ==== 2. Ajax tra khách hàng ====
     public async Task<JsonResult> OnGetCustomer(string id)
     {
         var c = await _db.Customers
@@ -52,7 +47,6 @@ public class BillPageModel : PageModel
         return new JsonResult(c);
     }
 
-    // ==== 3. Lưu hóa đơn (nút Ghi) ====
     public async Task<IActionResult> OnPostSaveAsync()
     {
         var master = new OrderMaster
@@ -87,9 +81,9 @@ public class BillPageModel : PageModel
 
     public class OrderItemDto
     {
-        public string ItemID { get; set; } = string.Empty;       // chọn từ dropdown
-        public string ItemName { get; set; } = string.Empty;     // tự điền
-        public string Unit { get; set; } = string.Empty;         // tự điền
+        public string ItemID { get; set; } = string.Empty;       
+        public string ItemName { get; set; } = string.Empty;     
+        public string Unit { get; set; } = string.Empty;        
         public int Quantity { get; set; }
         public decimal Price { get; set; }
         public decimal Amount => Quantity * Price;
