@@ -49,33 +49,65 @@ public class BillPageModel : PageModel
 
     public async Task<IActionResult> OnPostSaveAsync()
     {
-        var master = new OrderMaster
-        {
-            OrderDate = OrderDate,
-            OrderNo = OrderNo,
-            CustomerID = CustomerID!,
-            TotalAmount = Items.Sum(x => x.Quantity * x.Price),
-        };
-        _db.OrderMasters.Add(master);
-        await _db.SaveChangesAsync();
+        var existingOrder = await _db.OrderMasters
+                                     .Include(m => m.OrderDetails)
+                                     .FirstOrDefaultAsync(m => m.OrderNo == OrderNo);
 
-        int line = 1;
-        foreach (var item in Items)
+        if (existingOrder != null)
         {
-            var detail = new OrderDetail
+            existingOrder.OrderDate = OrderDate;
+            existingOrder.CustomerID = CustomerID!;
+            existingOrder.TotalAmount = Items.Sum(x => x.Quantity * x.Price);
+
+            _db.OrderDetails.RemoveRange(existingOrder.OrderDetails);
+
+            int line = 1;
+            foreach (var item in Items)
             {
-                OrderID = master.OrderID,
-                LineNumber = line++,
-                ItemID = item.ItemID,
-                Quantity = item.Quantity,
-                Price = item.Price,
-                Amount = item.Amount
-            };
-            _db.OrderDetails.Add(detail);
-        }
-        await _db.SaveChangesAsync();
+                existingOrder.OrderDetails.Add(new OrderDetail
+                {
+                    ItemID = item.ItemID,
+                    Quantity = item.Quantity,
+                    Price = item.Price,
+                    Amount = item.Amount,
+                    LineNumber = line++,
+                });
+            }
 
-        TempData["msg"] = "Đã lưu hóa đơn!";
+            await _db.SaveChangesAsync();
+            TempData["msg"] = "Đã cập nhật hóa đơn!";
+        }
+        else
+        {
+            var master = new OrderMaster
+            {
+                OrderDate = OrderDate,
+                OrderNo = OrderNo,
+                CustomerID = CustomerID!,
+                TotalAmount = Items.Sum(x => x.Quantity * x.Price),
+            };
+            _db.OrderMasters.Add(master);
+            await _db.SaveChangesAsync();
+
+            int line = 1;
+            foreach (var item in Items)
+            {
+                var detail = new OrderDetail
+                {
+                    OrderID = master.OrderID,
+                    LineNumber = line++,
+                    ItemID = item.ItemID,
+                    Quantity = item.Quantity,
+                    Price = item.Price,
+                    Amount = item.Amount
+                };
+                _db.OrderDetails.Add(detail);
+            }
+
+            await _db.SaveChangesAsync();
+            TempData["msg"] = "Đã lưu hóa đơn mới!";
+        }
+
         return RedirectToPage();
     }
 
@@ -101,7 +133,7 @@ public class BillPageModel : PageModel
                 i.ItemID,
                 i.ItemName,
                 Unit = i.InvUnitOfMeasr,
-                Price = 0
+                Price = 0M
             })
             .FirstOrDefaultAsync();
 

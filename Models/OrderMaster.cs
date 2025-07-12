@@ -6,7 +6,7 @@ namespace damiWeb.Models
     [Table("tblOrderMaster")]
     public class OrderMaster
     {
-        [Key] public int OrderID { get; set; }       
+        [Key] public long OrderID { get; set; }       
         public DateTime OrderDate { get; set; }
         public string OrderNo { get; set; } = string.Empty;
         public string CustomerID { get; set; } = string.Empty;

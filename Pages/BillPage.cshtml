@@ -1,6 +1,7 @@
 ﻿@page
 @model damiWeb.Pages.BillPageModel
 <link rel="stylesheet" href="~/css/BillPage.css" />
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <div class="bill-container">
     <div class="bill-title">HÓA ĐƠN BÁN HÀNG</div>
@@ -222,7 +223,6 @@
                 row.querySelector('.item-id').value = item.itemID;
                 row.querySelector('.item-name').value = item.itemName;
                 row.querySelector('.item-unit').value = item.unit;
-                row.querySelector('.item-price').value = item.price;
                 updateTotals();
             } else {
                 console.warn("Không tìm thấy mặt hàng với:", val);
@@ -274,7 +274,17 @@
                     updateTotals();
                 }
             }
-        }, true); 
+        }, true);
 
+        @if (TempData["msg"] != null)
+        {
+                <text>
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Thành công',
+                        text: '@TempData["msg"]'
+                    });
+                </text>
+        }
     </script>
 }
