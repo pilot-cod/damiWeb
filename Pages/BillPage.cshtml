@@ -308,18 +308,15 @@
                     return;
                 }
 
-                // Gán thông tin chung
                 document.querySelector('[name="OrderNo"]').value = data.orderNo ?? '';
                 document.querySelector('[name="OrderDate"]').value = (data.orderDate ?? '').substring(0, 10);
                 document.querySelector('[name="CustomerID"]').value = data.customerID ?? '';
                 document.querySelector('[name="CustomerName"]').value = data.customerName ?? '';
                 document.querySelector('[name="Address"]').value = data.address ?? '';
 
-                // Xóa dòng cũ
                 const tbody = document.getElementById('goods-body');
                 tbody.innerHTML = '';
 
-                // Thêm từng dòng hàng
                 data.items.forEach((item, index) => {
                     let itemOptions = '<option value="">-- Mã hàng --</option>';
                     if (Array.isArray(itemList)) {
