@@ -9,8 +9,18 @@
     <form method="post" asp-page-handler="Save">
         <div class="bill-info" style="display: flex; justify-content: space-between; align-items: center;">
             <div>
-                <label>Số hóa đơn:</label>
-                <input asp-for="OrderNo" readonly style="width: 80px;" />
+                <div style="margin: 10px 0;">
+                    <label>Số hóa đơn:</label>
+                    <select id="orderSelect" onchange="loadOrder(this.value)">
+                        <option value="">-- Chọn số hóa đơn --</option>
+                        @foreach (var orderNo in Model.ExistingOrderNos)
+                        {
+                            <option value="@orderNo">@orderNo</option>
+                        }
+                    </select>
+
+                    <input type="hidden" name="OrderNo" value="@Model.OrderNo" />
+                </div>
             </div>
             <div>
                 <label>Ngày:</label>
@@ -60,7 +70,7 @@
                                     {
                                         var selected = Model.Items[i].ItemID == item.ItemID ? "selected" : "";
                                         <option value="@item.ItemID" selected="@(Model.Items[i].ItemID == item.ItemID ? "selected" : null)">
-                                            @($"{item.ItemID} - {item.ItemName}")
+                                            @($"{item.ItemID}")
                                         </option>
                                     }
                                 </select>
@@ -166,7 +176,7 @@
 
             let itemOptions = '<option value="">-- Mã hàng --</option>';
             itemList.forEach(item => {
-                itemOptions += `<option value="${item.itemID}">${item.itemID} - ${item.itemName}</option>`;
+                itemOptions += `<option value="${item.itemID}">${item.itemID} </option>`;
             });
 
             row.innerHTML = `
@@ -275,6 +285,76 @@
                 }
             }
         }, true);
+
+        function loadOrder(orderNo) {
+            if (!orderNo) return;
+
+            fetch(`/BillPage?handler=LoadOrder&orderNo=${encodeURIComponent(orderNo)}`, {
+                method: 'GET',
+                headers: {
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Không thể fetch dữ liệu từ server');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (!data || !data.items || !Array.isArray(data.items)) {
+                    Swal.fire('Lỗi', 'Không tìm thấy hóa đơn hoặc dữ liệu không hợp lệ', 'error');
+                    return;
+                }
+
+                // Gán thông tin chung
+                document.querySelector('[name="OrderNo"]').value = data.orderNo ?? '';
+                document.querySelector('[name="OrderDate"]').value = (data.orderDate ?? '').substring(0, 10);
+                document.querySelector('[name="CustomerID"]').value = data.customerID ?? '';
+                document.querySelector('[name="CustomerName"]').value = data.customerName ?? '';
+                document.querySelector('[name="Address"]').value = data.address ?? '';
+
+                // Xóa dòng cũ
+                const tbody = document.getElementById('goods-body');
+                tbody.innerHTML = '';
+
+                // Thêm từng dòng hàng
+                data.items.forEach((item, index) => {
+                    let itemOptions = '<option value="">-- Mã hàng --</option>';
+                    if (Array.isArray(itemList)) {
+                        itemList.forEach(i => {
+                            const selected = i.itemID === item.itemID ? 'selected' : '';
+                            itemOptions += `<option value="${i.itemID}" ${selected}>${i.itemID} - ${i.itemName}</option>`;
+                        });
+                    }
+
+                    const row = document.createElement('tr');
+                    const amount = (item.quantity || 0) * (item.price || 0);
+
+                    row.innerHTML = `
+                        <td>
+                            <select name="Items[${index}].ItemID" class="item-id" onchange="onItemChange(this)">
+                                ${itemOptions}
+                            </select>
+                        </td>
+                        <td><input name="Items[${index}].ItemName" class="item-name" value="${item.itemName ?? ''}" onchange="onItemChange(this)" /></td>
+                        <td><input name="Items[${index}].Unit" class="item-unit" value="${item.unit ?? ''}" readonly /></td>
+                        <td><input name="Items[${index}].Quantity" type="number" class="item-qty text-right" value="${item.quantity ?? 0}" /></td>
+                        <td><input name="Items[${index}].Price" type="text" class="item-price text-right" value="${formatCurrency(item.price)}" /></td>
+                        <td><input name="Items[${index}].Amount" class="item-amount text-right" type="text" value="${formatCurrency(amount)}" /></td>
+                        <td><button type="button" onclick="removeRow(this)">X</button></td>
+                    `;
+                    tbody.appendChild(row);
+                });
+
+                updateTotals();
+            })
+            .catch(error => {
+                console.error('Lỗi khi tải hóa đơn:', error);
+                Swal.fire('Lỗi', 'Không thể tải hóa đơn', 'error');
+            });
+        }
 
         @if (TempData["msg"] != null)
         {

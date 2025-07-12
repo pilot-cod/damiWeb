@@ -20,7 +20,8 @@ public class BillPageModel : PageModel
     [BindProperty] public List<OrderItemDto> Items { get; set; } = new();
 
     public List<Customer> AllCustomers { get; set; } = new();     
-    public List<Item> AllItems { get; set; } = new();            
+    public List<Item> AllItems { get; set; } = new();
+    public List<string> ExistingOrderNos { get; set; } = new();
 
     public async Task OnGetAsync()
     {
@@ -33,6 +34,7 @@ public class BillPageModel : PageModel
         OrderNo = next.ToString("D3");
         Items.Add(new OrderItemDto());
 
+        ExistingOrderNos = await _db.OrderMasters.OrderBy(o => o.OrderNo).Select(o => o.OrderNo).ToListAsync();
         AllCustomers = await _db.Customers.OrderBy(c => c.CustomerID).ToListAsync();
         AllItems = await _db.Items.OrderBy(i => i.ItemID).ToListAsync();
     }
@@ -151,5 +153,39 @@ public class BillPageModel : PageModel
             }).ToListAsync();
 
         return new JsonResult(items);
+    }
+
+    public async Task<JsonResult> OnGetLoadOrderAsync(string orderNo)
+    {
+        var order = await _db.OrderMasters
+            .Include(o => o.OrderDetails)
+            .FirstOrDefaultAsync(o => o.OrderNo == orderNo);
+
+        if (order == null)
+            return new JsonResult(null);
+
+        var customer = await _db.Customers
+            .FirstOrDefaultAsync(c => c.CustomerID == order.CustomerID);
+
+        var itemDict = await _db.Items
+            .ToDictionaryAsync(i => i.ItemID);
+
+        var result = new
+        {
+            order.OrderNo,
+            OrderDate = order.OrderDate.ToString("yyyy-MM-dd"),
+            order.CustomerID,
+            CustomerName = customer?.CustomerName ?? "",
+            Address = customer?.Address ?? "",
+            Items = order.OrderDetails.Select(d => new {
+                d.ItemID,
+                ItemName = itemDict.ContainsKey(d.ItemID) ? itemDict[d.ItemID].ItemName : "",
+                Unit = itemDict.ContainsKey(d.ItemID) ? itemDict[d.ItemID].InvUnitOfMeasr : "",
+                d.Quantity,
+                d.Price
+            }).ToList()
+        };
+
+        return new JsonResult(result);
     }
 }
