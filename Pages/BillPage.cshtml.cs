@@ -16,11 +16,13 @@ public class BillPageModel : PageModel
     [BindProperty] public string OrderNo { get; set; } = string.Empty;
     [BindProperty] public DateTime OrderDate { get; set; } = DateTime.Today;
 
-    [BindProperty] public string? CustomerID { get; set; }         // gõ mã KH
-    [BindProperty] public string? CustomerName { get; set; }   // tự điền
-    [BindProperty] public string? Address { get; set; }        // tự điền
-    [BindProperty]
-    public List<OrderItemDto> Items { get; set; } = new();
+    [BindProperty] public string? CustomerID { get; set; }         // chọn mã KH từ dropdown
+    [BindProperty] public string? CustomerName { get; set; }       // tự điền
+    [BindProperty] public string? Address { get; set; }            // tự điền
+    [BindProperty] public List<OrderItemDto> Items { get; set; } = new();
+
+    public List<Customer> AllCustomers { get; set; } = new();      // dùng cho dropdown mã KH
+    public List<Item> AllItems { get; set; } = new();              // dùng cho dropdown mã hàng
 
     // ==== 1. Lấy OrderNo mới khi mở trang ====
     public async Task OnGetAsync()
@@ -33,6 +35,10 @@ public class BillPageModel : PageModel
         int next = int.TryParse(last, out int cur) ? cur + 1 : 1;
         OrderNo = next.ToString("D3");
         Items.Add(new OrderItemDto());
+
+        // Load danh sách KH và Hàng hóa cho dropdown
+        AllCustomers = await _db.Customers.OrderBy(c => c.CustomerID).ToListAsync();
+        AllItems = await _db.Items.OrderBy(i => i.ItemID).ToListAsync();
     }
 
     // ==== 2. Ajax tra khách hàng ====
@@ -57,7 +63,7 @@ public class BillPageModel : PageModel
             TotalAmount = Items.Sum(x => x.Quantity * x.Price),
         };
         _db.OrderMasters.Add(master);
-        await _db.SaveChangesAsync(); // Lưu để có OrderID
+        await _db.SaveChangesAsync();
 
         int line = 1;
         foreach (var item in Items)
@@ -81,15 +87,15 @@ public class BillPageModel : PageModel
 
     public class OrderItemDto
     {
-        public string ItemID { get; set; } = string.Empty;
-        public string ItemName { get; set; } = string.Empty;
-        public string Unit { get; set; } = string.Empty;
+        public string ItemID { get; set; } = string.Empty;       // chọn từ dropdown
+        public string ItemName { get; set; } = string.Empty;     // tự điền
+        public string Unit { get; set; } = string.Empty;         // tự điền
         public int Quantity { get; set; }
         public decimal Price { get; set; }
         public decimal Amount => Quantity * Price;
     }
 
-    public List<OrderItemDto> OrderItems { get; set; } = new(); // mẫu tĩnh (hoặc lấy từ DB)
+    public List<OrderItemDto> OrderItems { get; set; } = new();
     public int TotalQuantity => OrderItems.Sum(i => i.Quantity);
     public decimal TotalAmount => OrderItems.Sum(i => i.Amount);
 
@@ -101,7 +107,7 @@ public class BillPageModel : PageModel
                 i.ItemID,
                 i.ItemName,
                 Unit = i.InvUnitOfMeasr,
-                Price = 0 // hoặc giá mặc định nếu có
+                Price = 0
             })
             .FirstOrDefaultAsync();
 

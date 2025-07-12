@@ -21,7 +21,14 @@
         <!-- Dòng 2: Mã KH và Tên KH -->
         <div class="customer-info" style="display: flex; align-items: center; margin-top: 10px;">
             <label style="margin-right: 8px;">Khách hàng:</label>
-            <input asp-for="CustomerID" id="txtMaKH" style="width: 80px; margin-right: 10px;" />
+            <select asp-for="CustomerID" id="txtMaKH" style="width: 100px; margin-right: 10px;" onchange="onCustomerChange()">
+                <option value="">-- Chọn mã KH --</option>
+                @foreach (var c in Model.AllCustomers)
+                {
+                    <option value="@c.CustomerID">@c.CustomerID - @c.CustomerName</option>
+                }
+            </select>
+
             <input asp-for="CustomerName" readonly style="flex-grow: 1;" />
         </div>
 
@@ -49,8 +56,16 @@
                     {
                         <tr>
                             <td>
-                                <input name="Items[@i].ItemID" class="item-id" value="@Model.Items[i].ItemID"
-                                       onchange="onItemChange(this)" />
+                                <select name="Items[@i].ItemID" class="item-id" onchange="onItemChange(this)">
+                                    <option value="">-- Mã hàng --</option>
+                                    @foreach (var item in Model.AllItems)
+                                    {
+                                        var selected = Model.Items[i].ItemID == item.ItemID ? "selected" : "";
+                                        <option value="@item.ItemID" selected="@(Model.Items[i].ItemID == item.ItemID ? "selected" : null)">
+                                            @($"{item.ItemID} - {item.ItemName}")
+                                        </option>
+                                    }
+                                </select>
                             </td>
                             <td>
                                 <input name="Items[@i].ItemName" class="item-name" value="@Model.Items[i].ItemName"
@@ -59,7 +74,7 @@
                             <td><input name="Items[@i].Unit" class="item-unit" value="@Model.Items[i].Unit" readonly /></td>
                             <td><input name="Items[@i].Quantity" type="number" class="item-qty text-right" value="@Model.Items[i].Quantity" /></td>
                             <td><input name="Items[@i].Price" type="text" class="item-price text-right" value="@Model.Items[i].Price" /></td>
-                            <td><input name="Items[@i].Amount" class="item-amount text-right" type="text" value="@Model.Items[i].Amount.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"))" readonly /></td>
+                            <td><input name="Items[@i].Amount" class="item-amount text-right" type="text" value="@Model.Items[i].Amount.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"))" /></td>
                             <td><button type="button" onclick="removeRow(this)">X</button></td>
                         </tr>
                     }
@@ -152,13 +167,22 @@
             const index = table.rows.length;
             const row = table.insertRow();
 
+            let itemOptions = '<option value="">-- Mã hàng --</option>';
+            itemList.forEach(item => {
+                itemOptions += `<option value="${item.itemID}">${item.itemID} - ${item.itemName}</option>`;
+            });
+
             row.innerHTML = `
-                <td><input name="Items[${index}].ItemID" class="item-id" onchange="onItemChange(this)" /></td>
+                <td>
+                    <select name="Items[${index}].ItemID" class="item-id" onchange="onItemChange(this)">
+                        ${itemOptions}
+                    </select>
+                </td>
                 <td><input name="Items[${index}].ItemName" class="item-name" onchange="onItemChange(this)" readonly /></td>
                 <td><input name="Items[${index}].Unit" class="item-unit" readonly /></td>
                 <td><input name="Items[${index}].Quantity" type="number" class="item-qty text-right" value="0" /></td>
                 <td><input name="Items[${index}].Price" type="number" class="item-price text-right" value="0" /></td>
-                <td><input name="Items[${index}].Amount" class="item-amount text-right" type="text" readonly /></td>
+                <td><input name="Items[${index}].Amount" class="item-amount text-right" type="text" /></td>
                 <td><button type="button" onclick="removeRow(this)">X</button></td>
             `;
         }
@@ -230,6 +254,36 @@
                 updateTotals();
             }
         }, true);
+
+        document.addEventListener('blur', function (e) {
+            if (e.target.classList.contains('item-amount')) {
+                const row = e.target.closest('tr');
+
+                // Lấy thành tiền sau khi người dùng nhập
+                const rawAmount = e.target.value.replace(/\D/g, '');
+                const amount = parseFloat(rawAmount) || 0;
+
+                const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+
+                if (qty > 0) {
+                    const price = amount / qty;
+
+                    // Nếu nhỏ hơn 1000, giả định người dùng đang nhập đơn vị nghìn
+                    let adjustedPrice = price;
+                    if (price < 1000) adjustedPrice *= 1000;
+
+                    const formattedPrice = new Intl.NumberFormat('vi-VN', {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0
+                    }).format(Math.round(adjustedPrice));
+
+                    row.querySelector('.item-price').value = formattedPrice;
+
+                    updateTotals();
+                }
+            }
+        }, true); // dùng capture phase để đảm bảo blur luôn bắt được
+
 
     </script>
 }
